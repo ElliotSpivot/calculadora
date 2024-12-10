@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Subir Video</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"></script>
+    <style>
+        /* General styles */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #121212; /* Fondo oscuro */
+            color: #e0e0e0; /* Texto claro */
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            flex-direction: column;
+        }
+
+        h1 {
+            color: #00bcd4; /* Título en color cyan */
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            text-shadow: 0 2px 5px rgba(0, 188, 212, 0.7);
+        }
+
+        /* Formulario */
+        #uploadForm {
+            background-color: #1e1e1e; /* Fondo del formulario */
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            width: 100%;
+            max-width: 450px;
+            text-align: center;
+        }
+
+        #uploadForm input[type="file"] {
+            margin-bottom: 20px;
+            padding: 12px;
+            border: 2px solid #00bcd4; /* Borde azul-cyan */
+            border-radius: 6px;
+            width: 100%;
+            background-color: #333333;
+            color: #e0e0e0;
+            font-size: 1rem;
+        }
+
+        #uploadForm input[type="file"]:focus {
+            border-color: #03a9f4;
+            background-color: #444444;
+        }
+
+        #uploadForm button {
+            background-color: #009688; /* Verde oscuro */
+            color: white;
+            border: none;
+            padding: 15px 25px;
+            font-size: 1.1rem;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.3s ease;
+            width: 100%;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        }
+
+        #uploadForm button:disabled {
+            background-color: #555555;
+            cursor: not-allowed;
+        }
+
+        #uploadForm button:hover {
+            background-color: #00796b; /* Cambio de color en hover */
+            transform: scale(1.05); /* Efecto de escala en hover */
+        }
+
+        /* Barra de progreso */
+        #progressContainer {
+            width: 100%;
+            max-width: 450px;
+            margin-top: 30px;
+            display: none; /* Ocultada por defecto */
+        }
+
+        #progressBar {
+            width: 100%;
+            height: 20px;
+            background-color: #444444; /* Fondo de la barra */
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        #progress {
+            height: 100%;
+            width: 0;
+            background-color: #4caf50; /* Barra verde */
+            transition: width 0.3s ease;
+        }
+
+        #progressText {
+            text-align: center;
+            margin-top: 8px;
+            font-size: 1rem;
+            color: #e0e0e0;
+        }
+
+        /* Enlace del video */
+        #videoLinkContainer {
+            margin-top: 20px;
+            text-align: center;
+            display: none; /* Oculto por defecto */
+        }
+
+        #videoLink {
+            color: #00bcd4; /* Color del enlace */
+            font-size: 1.2rem;
+            text-decoration: none;
+            border: 2px solid #00bcd4;
+            padding: 8px 15px;
+            border-radius: 4px;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        #videoLink:hover {
+            background-color: #00bcd4;
+            color: white;
+        }
+
+    </style>
+</head>
+<body>
+
+    <!-- Formulario para subir video -->
+    <div>
+        <h1>Subir Video</h1>
+        <form id="uploadForm">
+            <input type="file" id="videoFile" name="video" accept="video/*" required>
+            <button type="submit" id="submitBtn">Subir Video</button>
+        </form>
+    </div>
+
+    <!-- Contenedor para la barra de progreso -->
+    <div id="progressContainer">
+        <div id="progressBar">
+            <div id="progress"></div>
+        </div>
+        <p id="progressText">0%</p>
+    </div>
+
+    <!-- Contenedor para mostrar el enlace del video -->
+    <div id="videoLinkContainer">
+        <p>¡El video se ha subido correctamente! Puedes verlo aquí:</p>
+        <a id="videoLink" href="" target="_blank">Ver Video</a>
+    </div>
+
+    <script>
+        const uploadForm = document.getElementById('uploadForm');
+        const videoFileInput = document.getElementById('videoFile');
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const submitBtn = document.getElementById('submitBtn');
+        const videoLinkContainer = document.getElementById('videoLinkContainer');
+        const videoLink = document.getElementById('videoLink');
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Deshabilitar el botón de subir mientras se sube el archivo
+            submitBtn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('video', videoFileInput.files[0]);
+
+            // Mostrar la barra de progreso
+            progressContainer.style.display = 'block';
+
+            try {
+                const response = await axios.post('http://localhost:3000/upload', formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                    onUploadProgress: (progressEvent) => {
+                        if (progressEvent.lengthComputable) {
+                            const progress = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+                            progressBar.style.width = `${progress}%`;
+                            progressText.innerText = `${progress}%`;
+                        }
+                    }
+                });
+
+                // Habilitar el botón de subir de nuevo y ocultar la barra de progreso
+                submitBtn.disabled = false;
+                progressContainer.style.display = 'none';
+
+                // Mostrar el enlace al video subido
+                videoLink.href = response.data.videoUrl;
+                videoLink.innerText = 'Ver Video';
+                videoLinkContainer.style.display = 'block';
+            } catch (error) {
+                console.error('Error al subir el video:', error);
+
+                // Si hay error, habilitar el botón de subir y ocultar la barra de progreso
+                submitBtn.disabled = false;
+                progressContainer.style.display = 'none';
+            }
+        });
+    </script>
+
+</body>
+</html>
